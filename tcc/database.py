@@ -1,12 +1,10 @@
 import mysql.connector
-
 db_config = {
     'host': 'localhost',
     'user': 'root',
     'password': 'roottupa2023',
     'database': 'dados'
 }
-
 def insert_data(name, age, gender, text_summarization, summarized_text, text_generation, question,
                 answer, text_translation, language, translated_text):
     try:
