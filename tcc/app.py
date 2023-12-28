@@ -4,7 +4,6 @@ from deep_translator import GoogleTranslator
 from summarization import summarize_text
 from generation import generate_answer
 from database import insert_data
-
 def translate_page(language):
     translator = GoogleTranslator(source='auto', target=language)
     translated_title = translator.translate("Seja Bem Vindo ao MAKENLP")
@@ -38,24 +37,17 @@ def translate_page(language):
     translated_lang = translator.translate("Selecione o idioma de destino:")
     language_options = ['en', 'es', 'fr', 'pt']
     language = st.selectbox(translated_lang, options=language_options, key='language')
-
-    # Button to translate text
     if st.button(translator.translate("Traduzir Texto")):
         translated_text = GoogleTranslator(source='auto', target=language).translate(text_translation)
         st.subheader(translator.translate("Texto Traduzido"))
         st.write(translated_text)
-
-    # Button to execute all functions and insert into the database
     if st.button(translator.translate("Enviar")):
         summarized_text = summarize_text(text_summarization)
         answer = generate_answer(question, text_generation)
         translated_text = GoogleTranslator(source='auto', target=language).translate(text_translation)
-
         insert_data(name, age, gender, text_summarization, summarized_text, text_generation,
                     question, answer, text_translation, language, translated_text)
         st.success(translator.translate("Dados inseridos com sucesso!"))
-
-# Run the Streamlit app
 if __name__ == '__main__':
     st.set_page_config(page_title="MAKENLP", page_icon=":speech_balloon:")
     translation_language = st.selectbox("Selecione o idioma de tradução:", options=['pt', 'en', 'fr', 'es'])
