@@ -1,6 +1,12 @@
+from cachetools import LRUCache, cached
 from deep_translator import GoogleTranslator
 
-def translate_text(text, language):
+# Crie um cache com um tamanho específico
+translation_cache = LRUCache(maxsize=128)
+
+# Função decorada com cache
+@cached(cache=translation_cache)
+def translate_text_cached(text, language):
     segment_length = 500
     segments = [text[i:i + segment_length] for i in range(0, len(text), segment_length)]
     translations = []
