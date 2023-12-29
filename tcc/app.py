@@ -1,9 +1,24 @@
-from translation import translate_text
 import streamlit as st
 from deep_translator import GoogleTranslator
+from cachetools import LRUCache, cached
+from transformers import AutoModelForQuestionAnswering, AutoTokenizer
 from summarization import summarize_text
 from generation import generate_answer
 from database import insert_data
+
+# Crie um cache com um tamanho específico
+translation_cache = LRUCache(maxsize=128)
+
+# Função decorada com cache
+@cached(cache=translation_cache)
+def translate_text_cached(text, language):
+    return GoogleTranslator(source='auto', target=language).translate(text)
+
+# Carregue o modelo de linguagem uma vez fora da função
+model_name = 'pierreguillou/bert-base-cased-squad-v1.1-portuguese'
+model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
 def translate_page(language):
     translator = GoogleTranslator(source='auto', target=language)
     translated_title = translator.translate("Seja Bem Vindo ao MAKENLP")
@@ -38,16 +53,17 @@ def translate_page(language):
     language_options = ['en', 'es', 'fr', 'pt']
     language = st.selectbox(translated_lang, options=language_options, key='language')
     if st.button(translator.translate("Traduzir Texto")):
-        translated_text = GoogleTranslator(source='auto', target=language).translate(text_translation)
+        translated_text = translate_text_cached(text_translation, language)
         st.subheader(translator.translate("Texto Traduzido"))
         st.write(translated_text)
     if st.button(translator.translate("Enviar")):
         summarized_text = summarize_text(text_summarization)
         answer = generate_answer(question, text_generation)
-        translated_text = GoogleTranslator(source='auto', target=language).translate(text_translation)
+        translated_text = translate_text_cached(text_translation, language)
         insert_data(name, age, gender, text_summarization, summarized_text, text_generation,
                     question, answer, text_translation, language, translated_text)
         st.success(translator.translate("Dados inseridos com sucesso!"))
+
 if __name__ == '__main__':
     st.set_page_config(page_title="MAKENLP", page_icon=":speech_balloon:")
     translation_language = st.selectbox("Selecione o idioma de tradução:", options=['pt', 'en', 'fr', 'es'])
