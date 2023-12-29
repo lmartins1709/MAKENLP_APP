@@ -1,10 +1,10 @@
 import streamlit as st
 from deep_translator import GoogleTranslator
 from cachetools import LRUCache, cached
-from transformers import AutoModelForQuestionAnswering, AutoTokenizer
+from generation import QuestionAnsweringModel
 from summarization import summarize_text
-from generation import generate_answer
 from database import insert_data
+import gc
 
 # Crie um cache com um tamanho específico
 translation_cache = LRUCache(maxsize=128)
@@ -16,8 +16,8 @@ def translate_text_cached(text, language):
 
 # Carregue o modelo de linguagem uma vez fora da função
 model_name = 'pierreguillou/bert-base-cased-squad-v1.1-portuguese'
-model = AutoModelForQuestionAnswering.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+qa_model = QuestionAnsweringModel(model_name)
+qa_model.load_model()
 
 def translate_page(language):
     translator = GoogleTranslator(source='auto', target=language)
@@ -43,7 +43,7 @@ def translate_page(language):
     translated_question = translator.translate("Faça uma pergunta sobre o texto:")
     question = st.text_input(translated_question, key='question')
     if st.button(translator.translate("Gerar Resposta")):
-        answer = generate_answer(question, text_generation)
+        answer = qa_model.generate_answer(question, text_generation)
         st.subheader(translator.translate("Resposta Gerada"))
         st.write(answer)
     translated_text_trans = translator.translate("Digite o texto para traduzir:")
@@ -58,11 +58,14 @@ def translate_page(language):
         st.write(translated_text)
     if st.button(translator.translate("Enviar")):
         summarized_text = summarize_text(text_summarization)
-        answer = generate_answer(question, text_generation)
+        answer = qa_model.generate_answer(question, text_generation)
         translated_text = translate_text_cached(text_translation, language)
         insert_data(name, age, gender, text_summarization, summarized_text, text_generation,
                     question, answer, text_translation, language, translated_text)
         st.success(translator.translate("Dados inseridos com sucesso!"))
+
+    # Liberar memória não utilizada
+    gc.collect()
 
 if __name__ == '__main__':
     st.set_page_config(page_title="MAKENLP", page_icon=":speech_balloon:")
